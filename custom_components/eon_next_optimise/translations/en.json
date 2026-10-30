@@ -1,0 +1,296 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "E.ON Next Optimise",
+        "description": "Connect your Optimise app account to display read-only prices, battery and vehicle telemetry, and SmartShift status.",
+        "data": {
+          "username": "Optimise app email",
+          "password": "Password"
+        }
+      },
+      "sites": {
+        "title": "Choose your sites",
+        "description": "Choose the sites to display in Home Assistant. This selection is local to this integration.",
+        "data": {
+          "site_ids": "Sites"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect E.ON Next Optimise",
+        "description": "Enter the Optimise app login for the same account.",
+        "data": {
+          "username": "Optimise app email",
+          "password": "Password"
+        }
+      },
+      "mfa": {
+        "title": "Verify your Optimise login",
+        "description": "Enter the six-digit verification code from your text message or authenticator.",
+        "data": {
+          "code": "Verification code"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The Optimise app login was rejected.",
+      "cannot_connect": "Unable to reach the Optimise service. Try again later.",
+      "no_sites": "No accessible Optimise sites were returned for this account.",
+      "invalid_sites": "Choose at least one of the available sites.",
+      "verification_required": "This login requires an additional verification step that the integration cannot complete yet.",
+      "new_password_required": "Complete the required password change in the official Optimise app, then try again.",
+      "invalid_code": "The verification code was rejected. Enter a current six-digit code."
+    },
+    "abort": {
+      "already_configured": "This Optimise account is already configured.",
+      "wrong_account": "Use the same Optimise account to reconnect.",
+      "reauth_required": "Reconnect this account before changing its sites.",
+      "cannot_connect": "Unable to reach the Optimise service. Try again later.",
+      "no_sites": "No accessible Optimise sites were returned for this account.",
+      "reauth_successful": "Successfully reconnected.",
+      "reconfigure_successful": "The selected sites were updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Polling intervals",
+        "description": "Choose how often to refresh each type of telemetry. Changes apply to this Home Assistant integration.",
+        "data": {
+          "prices_interval": "Price refresh interval (seconds)",
+          "live_interval": "Live telemetry refresh interval (seconds)",
+          "plan_interval": "Plan refresh interval (seconds)",
+          "status_interval": "Device status refresh interval (seconds)",
+          "ev_interval": "Vehicle telemetry refresh interval (seconds)",
+          "ev_plan_interval": "Vehicle plan refresh interval (seconds)",
+          "ev_history_interval": "Vehicle history refresh interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "invalid_interval": "Choose a refresh interval within the allowed range."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_soc": {
+        "name": "Battery state of charge"
+      },
+      "site_power": {
+        "name": "Grid power"
+      },
+      "solar_power": {
+        "name": "Solar power"
+      },
+      "load_power": {
+        "name": "Home load power"
+      },
+      "battery_power": {
+        "name": "Battery power"
+      },
+      "grid_import_power": {
+        "name": "Grid import power"
+      },
+      "grid_export_power": {
+        "name": "Grid export power"
+      },
+      "battery_charge_power": {
+        "name": "Battery charge power"
+      },
+      "battery_discharge_power": {
+        "name": "Battery discharge power"
+      },
+      "battery_energy": {
+        "name": "Battery stored energy"
+      },
+      "battery_capacity": {
+        "name": "Battery energy capacity"
+      },
+      "renewable_percentage": {
+        "name": "Current renewable percentage"
+      },
+      "power_state": {
+        "name": "Power state"
+      },
+      "strategy_status": {
+        "name": "Battery strategy status"
+      },
+      "device_count": {
+        "name": "Connected devices"
+      },
+      "device_error_count": {
+        "name": "Devices with errors"
+      },
+      "forecast_battery_energy": {
+        "name": "Forecast battery energy"
+      },
+      "forecast_solar_power": {
+        "name": "Forecast solar power"
+      },
+      "forecast_load_power": {
+        "name": "Forecast home load"
+      },
+      "import_price": {
+        "name": "Import price"
+      },
+      "next_import_price": {
+        "name": "Next import price"
+      },
+      "export_price": {
+        "name": "Export price"
+      },
+      "next_export_price": {
+        "name": "Next export price"
+      },
+      "minimum_reserve": {
+        "name": "Battery minimum reserve"
+      },
+      "plan_status": {
+        "name": "Plan status"
+      },
+      "prices_last_update": {
+        "name": "Prices last successful update"
+      },
+      "live_last_update": {
+        "name": "Live last successful update"
+      },
+      "plan_last_update": {
+        "name": "Plan last successful update"
+      },
+      "status_last_update": {
+        "name": "Status last successful update"
+      },
+      "interval_grid_import_energy": {
+        "name": "Interval grid import energy"
+      },
+      "interval_grid_export_energy": {
+        "name": "Interval grid export energy"
+      },
+      "interval_grid_net_energy": {
+        "name": "Interval grid net energy"
+      },
+      "interval_battery_import_energy": {
+        "name": "Interval battery import energy"
+      },
+      "interval_battery_export_energy": {
+        "name": "Interval battery export energy"
+      },
+      "interval_battery_net_energy": {
+        "name": "Interval battery net energy"
+      },
+      "interval_solar_export_energy": {
+        "name": "Interval solar export energy"
+      },
+      "interval_solar_import_energy": {
+        "name": "Interval solar import energy"
+      },
+      "interval_home_load_energy": {
+        "name": "Interval home load energy"
+      },
+      "interval_import_cost": {
+        "name": "Interval import cost"
+      },
+      "interval_export_earnings": {
+        "name": "Interval export earnings"
+      },
+      "interval_total_earnings": {
+        "name": "Interval total earnings"
+      },
+      "ev_last_update": {
+        "name": "EV last successful update"
+      },
+      "ev_soc": {
+        "name": "State of charge"
+      },
+      "ev_state": {
+        "name": "State"
+      },
+      "ev_connectivity": {
+        "name": "Connectivity"
+      },
+      "ev_charging_speed": {
+        "name": "Charging speed"
+      },
+      "ev_plan_last_update": {
+        "name": "EV plan last successful update"
+      },
+      "ev_history_last_update": {
+        "name": "EV history last successful update"
+      },
+      "ev_plan_target_soc": {
+        "name": "Ready-by target state of charge"
+      },
+      "ev_plan_target_time": {
+        "name": "Ready-by target time"
+      },
+      "ev_plan_forecast_soc": {
+        "name": "Next forecast state of charge"
+      },
+      "ev_history_home_charge": {
+        "name": "Latest reported day home charge"
+      },
+      "ev_history_away_charge": {
+        "name": "Latest reported day away charge"
+      },
+      "ev_history_grid_charge": {
+        "name": "Latest reported day grid charge"
+      },
+      "ev_history_solar_charge": {
+        "name": "Latest reported day solar charge"
+      },
+      "ev_history_battery_charge": {
+        "name": "Latest reported day battery charge"
+      },
+      "ev_history_grid_cost": {
+        "name": "Latest reported day grid cost"
+      },
+      "ev_history_grid_average_price": {
+        "name": "Latest reported day average grid price"
+      },
+      "ev_history_nominal_capacity": {
+        "name": "Nominal battery capacity"
+      },
+      "ev_history_nominal_economy": {
+        "name": "Nominal economy"
+      }
+    },
+    "binary_sensor": {
+      "battery_enrolled": {
+        "name": "Battery enrolled"
+      },
+      "solar_enrolled": {
+        "name": "Solar enrolled"
+      },
+      "ev_enrolled": {
+        "name": "Legacy EV enrolled"
+      },
+      "global_killswitch": {
+        "name": "Global automation stop"
+      },
+      "curtailment_enabled": {
+        "name": "Solar curtailment enabled"
+      },
+      "curtailment_supported": {
+        "name": "Solar curtailment supported"
+      },
+      "device_error": {
+        "name": "Device problem"
+      },
+      "curtailment_active": {
+        "name": "Solar curtailment active"
+      },
+      "ev_devices_enrolled": {
+        "name": "EV devices enrolled"
+      },
+      "ev_ready_by_eligible": {
+        "name": "Ready-by eligible"
+      },
+      "ev_plan_active": {
+        "name": "Ready-by active"
+      },
+      "ev_plan_recurring": {
+        "name": "Ready-by recurring"
+      }
+    }
+  }
+}

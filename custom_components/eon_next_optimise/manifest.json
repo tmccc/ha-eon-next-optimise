@@ -1,0 +1,16 @@
+{
+  "domain": "eon_next_optimise",
+  "name": "E.ON Next Optimise",
+  "codeowners": [
+    "@tmccc"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/tmccc/ha-eon-next-optimise",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/tmccc/ha-eon-next-optimise/issues",
+  "requirements": [
+    "pycognito==2024.5.1"
+  ],
+  "version": "0.2.0a5"
+}

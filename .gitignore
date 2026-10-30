@@ -1,0 +1,11 @@
+__pycache__/
+.pytest_cache/
+.venv/
+.coverage
+htmlcov/
+dist/
+.env
+secrets*
+config/
+*.log
+.ruff_cache/

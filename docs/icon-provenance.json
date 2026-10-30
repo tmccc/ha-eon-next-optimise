@@ -1,0 +1,6 @@
+{
+  "tool": "built-in image_gen",
+  "generated": "2026-10-14",
+  "asset": "Original integration icon",
+  "prompt": "Create an original square application icon for a read-only Home Assistant electricity pricing integration. Minimal flat vector-like graphic, bold simple shapes legible at small sizes: a compact house outline with two opposing import/export arrows, and a subtle small electricity bolt. Balanced centered composition with ample clear margins. Warm amber and deep teal on a genuinely transparent background. No text, no letters, no numbers, no official E.ON, Amber, HACS or Home Assistant trademarks or logos, no gradients, no shadows, no photorealism, no mockup. A polished friendly utility icon suitable for a Home Assistant integration device card."
+}
