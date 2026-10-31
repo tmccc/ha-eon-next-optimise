@@ -1,68 +1,70 @@
-# Release checks — 0.2.0a5
+# Release checks — 0.2.0a6
 
-This prerelease gives the expanded read-only integration its own repository and
-HACS update source. The component's executable Python files are unchanged from
-the validated 0.2.0a4 build. Component changes are limited to the manifest's
-version, maintainer, documentation and issue-tracker URLs.
+This prerelease fixes tariff availability when optional renewable-percentage
+metadata is outside its supported range. It also adds a separate sensor for the
+battery level shown by the official app, preserving the existing live EV value.
 
-## Scope
+## Changes
 
-- Twelve fixed GraphQL queries and seven independently scheduled feeds.
-- Prices, site/battery telemetry, enrolment/device status, EV telemetry,
-  provider charging forecasts, ready-by configuration and dated EV history.
-- Sensors and binary sensors only; no provider mutations or energy controls.
-- Normal account authentication, interactive SMS/TOTP handling and renewable
-  sessions, without saving passwords or MFA codes.
-- A public source snapshot with GitHub noreply authorship. Original MIT notices,
-  upstream provenance and artwork attribution are retained.
+- A finite renewable percentage outside 0–100 becomes unknown for that interval
+  without discarding valid tariff quotes. Price amounts, signs, interval bounds,
+  duplicate conflicts, malformed types and non-finite numbers remain validated.
+- **Battery level shown in app** follows the provider timeline interval covering
+  the current time and applies the app's floor/clamp display rule. Attributes
+  retain its source, raw percentage, interval bounds and rounding method.
+- **State of charge** remains the unmodified live EV field. The companion is a
+  prediction/display value, has no measurement state class and makes no extra
+  request. Future starts and timeline gaps do not supply a current value.
+- Each EV gains one entity. Existing entity identities and parent/child devices
+  are preserved. No authentication, query, credential-storage or control changes.
 
 ## Validation
 
-The expanded build has been tested on Home Assistant 2026.10.4. Its offline
-suite covers authentication/JWT verification, refresh rotation, concurrency,
-shutdown, partial failures, units, bounds, privacy, discovery and stale data.
-Network access is disabled during tests, apart from asyncio's internal Unix
-socket pair. Ruff lint and formatting checks are required.
+The build is tested against Home Assistant 2026.10.4. The offline suite covers
+JWT verification, token rotation, concurrency, shutdown, partial failures,
+units, bounds, privacy, discovery, stale data and the new regressions. Network
+access is disabled apart from asyncio's internal Unix socket pair.
 
-The publication candidate passed 455 tests and 18 subtests, with Ruff lint and
-formatting checks passing. One upstream pycognito `utcnow` deprecation warning
-remains. The production dependency stays pinned to `pycognito==2024.5.1`.
+The candidate passed 534 tests and 18 subtests, with Ruff lint and formatting
+checks passing. One upstream pycognito `utcnow` deprecation warning remains;
+the production dependency stays pinned to `pycognito==2024.5.1`.
 
-The repository's **Validate** workflow runs:
+A bounded read-only diagnostic identified a rejected production response:
+forecast renewable metadata contained the finite value −100. The candidate
+parser accepted that same cached response and recovered both price channels,
+without making another provider request or exporting account credentials or
+the complete response. Battery source/rounding behavior was traced in the
+Google Play app's signed code; synthetic tests preserve the independent live
+value while checking the app-display projection.
 
-1. The pinned Home Assistant test suite, Ruff and formatting checks.
-2. Official Home Assistant Hassfest.
-3. The HACS integration repository validator.
+The repository's **Validate** workflow runs the pinned tests/Ruff checks,
+official Home Assistant Hassfest, and the HACS integration validator. Releases
+must refer to passing checks for their exact source commit. A core restart is
+required to load changed Python modules; config-entry reload alone does not
+replace already imported code. Final live deployment and app comparisons are
+recorded separately after the running Home Assistant instance is updated.
 
-Published releases should refer to passing checks for their exact source commit.
-GitHub prereleases require beta versions to be enabled for this repository in
-HACS. The standard `custom_components/eon_next_optimise` layout is used; HACS
-downloads the tagged source. The attached ZIP is a manual-install alternative,
-and `zip_release` is not enabled.
+## Availability and interpretation
 
-## Availability limits
+Optional data still depends on provider enrolment and device support. Missing
+or stale readings remain unavailable; unsupported metadata is not replaced by
+zero. Partial status success does not imply complete battery settings.
 
-Optional data depends on the account's provider enrolment and device support.
-Unavailable or missing readings are preserved as unavailable, not replaced with
-zero. Successful partial status queries do not imply complete battery settings.
-Configured ready-by values can be absent when no configuration is reported.
+The app's timeline gauge and its live vehicle endpoint may report different
+percentages. The two HA sensors make those sources explicit. Fetch timestamps
+describe retrieval time, not a proven physical measurement timestamp.
 
-Forecasts contain at most 100 explicit intervals within 48 hours and flag
-truncation. Charging history preserves each reported date; its latest values
-are not assumed to mean today. History/interval energy and cost readings have
-no statistical counter class until reset semantics are verified.
+Forecasts retain at most 100 explicit intervals within 48 hours and flag
+truncation. History values retain their reported date and are not assumed to
+mean today. History/interval energy and cost readings are not lifetime counters.
 
-An app/API difference of one percentage point in EV state of charge was observed
-during validation. No adjustment is applied to the provider value, and no cause
-is asserted. Successful retrieval timestamps describe fetch time, not a proven
-physical measurement timestamp.
-
-## Distribution
+## Distribution and provenance
 
 Repository: <https://github.com/tmccc/ha-eon-next-optimise>.
-Initial expanded-fork release: `v0.2.0a5`.
+Release: `v0.2.0a6` (prerelease; enable beta versions in HACS).
 
-Source and release assets contain no account credentials, user account/device
-identifiers, private lab infrastructure, app binaries or personal screenshots.
-This is an unofficial community integration. HACS default-catalogue inclusion
-is separate from use as a custom repository and has not been requested.
+HACS uses the standard tagged source layout. The attached ZIP is an alternative
+for manual installation; `zip_release` is not enabled. Original MIT notices,
+upstream provenance and artwork attribution are retained. Public source and
+assets exclude credentials, customer identities, private infrastructure, app
+binaries and personal screenshots. This is an unofficial community integration.

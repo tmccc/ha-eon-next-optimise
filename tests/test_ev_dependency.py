@@ -156,8 +156,8 @@ async def test_known_live_vehicle_registers_all_optional_entities_when_queries_f
     )
     entry = await setup(hass, mock_client)
     entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
-    assert len(entities) == 72
-    assert sum(entity.domain == "sensor" for entity in entities) == 60
+    assert len(entities) == 73
+    assert sum(entity.domain == "sensor" for entity in entities) == 61
     assert sum(entity.domain == "binary_sensor" for entity in entities) == 12
     optional = [
         entity
@@ -188,7 +188,7 @@ async def test_removed_live_vehicle_invalidates_optional_states_immediately(
     await hass.async_block_till_done()
     assert hass.states.get(target.entity_id).state == "unavailable"
     assert hass.states.get(history.entity_id).state == "unavailable"
-    assert len(er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)) == 72
+    assert len(er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)) == 73
     fleet = entry.runtime_data.sites["site_alpha"].ev
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()

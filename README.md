@@ -23,6 +23,9 @@ with sensors and binary sensors for:
 - Energy and cost totals for the API's explicitly timestamped metrics interval.
 - Separate vehicle devices with EV charge level, reported vehicle state,
   connectivity, charging-speed text and ready-by eligibility.
+- A separate battery level shown in the app, derived from the current provider
+  timeline interval using the app's display rounding, with its source and raw
+  percentage retained as attributes.
 - Provider EV charging forecasts, configured ready-by targets and activity,
   and the latest explicitly dated charging-energy and grid-cost summary.
 - Reported nominal vehicle battery capacity and economy.
@@ -113,6 +116,10 @@ Prices advance at the actual next period boundary without another API request.
 Intervals are timezone-aware and half-open. Gaps remain gaps; DST days are not
 assumed to contain 48 periods. When no explicit price end is supplied, the
 current UK 30-minute period is used and marked as an assumption in rate metadata.
+An out-of-range finite renewable percentage is treated as unknown optional
+metadata for that interval. It does not discard otherwise valid tariff quotes.
+Price amounts, interval bounds, malformed types and non-finite values remain
+validated.
 
 ## Units and interpretation
 
@@ -158,6 +165,18 @@ plugged in. Vehicle state remains the provider's wording: the app may display
 “Resting” for its `Pending next charge` state. Charging speed remains display
 text until a numeric power field and unit are verified. VIN, location, command
 history and action links are excluded from the query.
+
+The app's large battery gauge and the live EV state-of-charge field have
+different sources. The gauge uses the selected timeline interval's starting SOC,
+floored and clamped to 0–100; the chart retains fractional values. For example,
+a timeline estimate of 79.8% is displayed as 79%, even if the separate live
+endpoint reports 80%. **Battery level shown in app** mirrors the interval covering
+the current time, without changing **State of charge**, which retains the live
+provider value. It does not follow a future point manually selected in the app.
+The companion has no measurement state class, requests no extra data, and is
+unavailable when the timeline is stale or has a gap. Its attributes include the
+unrounded percentage, interval bounds and display method. Fetch timestamps do
+not establish when the physical vehicle was last measured.
 
 Normal TLS certificate validation stays enabled. The fixed production endpoint
 does not accept arbitrary URLs, documents or redirects. GraphQL variables carry

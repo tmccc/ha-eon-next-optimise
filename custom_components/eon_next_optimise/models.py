@@ -168,6 +168,11 @@ def parse_prices(payload: Any) -> dict[str, list[dict[str, Any]]]:
                 raw = _number(period.get("kwhPriceInCents"))
                 value = -raw if raw is not None and direction == "export" else raw
                 low, high = _range(period, direction == "export")
+                renewable = _number(period.get("renewablePercentage"))
+                # Optional provider metadata must not hide valid tariff quotes.
+                # Keep unsupported finite percentages unknown, never clamp them.
+                if renewable is not None and not 0 <= renewable <= 100:
+                    renewable = None
                 row = {
                     "valid_from": start.isoformat(),
                     "valid_to": end.isoformat(),
@@ -177,9 +182,7 @@ def parse_prices(payload: Any) -> dict[str, list[dict[str, Any]]]:
                     "estimate": _boolean(period.get("estimate")),
                     "range_min": low,
                     "range_max": high,
-                    "renewable_percentage": _number(
-                        period.get("renewablePercentage"), percentage=True
-                    ),
+                    "renewable_percentage": renewable,
                     "indicator": _text(period.get("indicator")),
                     "demand_window": _boolean(period.get("demandWindow")),
                     "interval_basis": "provider_end"

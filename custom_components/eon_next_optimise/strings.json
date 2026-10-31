@@ -252,6 +252,9 @@
       },
       "ev_history_nominal_economy": {
         "name": "Nominal economy"
+      },
+      "ev_app_soc": {
+        "name": "Battery level shown in app"
       }
     },
     "binary_sensor": {

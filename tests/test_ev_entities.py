@@ -149,16 +149,16 @@ async def setup(hass, mock_client, section_data):
     return entry
 
 
-async def test_real_platform_setup_creates_53_site_plus_nineteen_vehicle_entities(
+async def test_real_platform_setup_creates_53_site_plus_twenty_vehicle_entities(
     hass, mock_client, section_data
 ):
     section_data["ev"].update(vehicles=[vehicle()], vehicle_count=1)
     entry = await setup(hass, mock_client, section_data)
     registry = er.async_get(hass)
     entities = er.async_entries_for_config_entry(registry, entry.entry_id)
-    assert len(entities) == 72
+    assert len(entities) == 73
     ev_entries = [item for item in entities if ":ev:" in item.unique_id]
-    assert len(ev_entries) == 19
+    assert len(ev_entries) == 20
     assert {item.domain for item in ev_entries} == {"sensor", "binary_sensor"}
     for item in ev_entries:
         assert "private-vehicle" not in item.unique_id
@@ -188,18 +188,18 @@ async def test_new_vehicle_added_once_missing_vehicle_unavailable_and_unload_cle
     await section.async_refresh()
     await hass.async_block_till_done()
     entities = er.async_entries_for_config_entry(registry, entry.entry_id)
-    assert len(entities) == 72
+    assert len(entities) == 73
     first_soc = next(item.entity_id for item in entities if item.unique_id.endswith(":soc"))
     assert hass.states.get(first_soc).state == "61"
     await section.async_refresh()
     await hass.async_block_till_done()
-    assert len(er.async_entries_for_config_entry(registry, entry.entry_id)) == 72
+    assert len(er.async_entries_for_config_entry(registry, entry.entry_id)) == 73
     section_data["ev"].update(
         vehicles=[vehicle("private-vehicle-two", state_of_charge=72)], vehicle_count=1
     )
     await section.async_refresh()
     await hass.async_block_till_done()
-    assert len(er.async_entries_for_config_entry(registry, entry.entry_id)) == 91
+    assert len(er.async_entries_for_config_entry(registry, entry.entry_id)) == 93
     assert hass.states.get(first_soc).state == "unavailable"
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()

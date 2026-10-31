@@ -1,6 +1,7 @@
 """Read-only vehicle telemetry with private identifiers and dynamic discovery."""
 
 import hashlib
+import math
 from dataclasses import dataclass
 from datetime import date
 
@@ -409,6 +410,68 @@ class OptimiseEVForecastSensor(OptimiseEVModuleEntity, SensorEntity):
         }
 
 
+class OptimiseEVAppSocSensor(OptimiseEVModuleEntity, SensorEntity):
+    """Mirror the app's current timeline gauge without changing live telemetry."""
+
+    _attr_device_class = SensorDeviceClass.BATTERY
+    _attr_native_unit_of_measurement = PERCENTAGE
+
+    def __init__(self, coordinator, site_label, vehicle, number):
+        super().__init__(coordinator, site_label, vehicle, number, "app_soc", "timeline")
+        self.entity_description = SensorEntityDescription(
+            key="ev_app_soc", name="Battery level shown in app"
+        )
+
+    def _current(self):
+        if not super().available:
+            return None
+        now = dt_util.utcnow()
+        matches = [
+            (start, end, row)
+            for start, end, row in _periods(self._module().get("intervals"))
+            if row.get("quality") in {"current", "forecast"} and start <= now < end
+        ]
+        if len(matches) != 1 or not finite_number(matches[0][2].get("state_of_charge")):
+            return None
+        return matches[0]
+
+    @property
+    def available(self):
+        return self._current() is not None
+
+    @property
+    def native_value(self):
+        current = self._current()
+        if current is None:
+            return None
+        # Official app sanitiseSocPercent floors the interval's starting SOC.
+        return max(0, min(100, math.floor(current[2]["state_of_charge"])))
+
+    def _change_instants(self, now):
+        return super()._change_instants(now) + [
+            point
+            for start, end, row in _periods(self._module().get("intervals"))
+            if row.get("quality") in {"current", "forecast"}
+            for point in (start, end)
+        ]
+
+    @property
+    def extra_state_attributes(self):
+        current = self._current()
+        if current is None:
+            return None
+        start, end, row = current
+        return {
+            "source": "ev_timeline",
+            "raw_state_of_charge": row["state_of_charge"],
+            "valid_from": start.isoformat(),
+            "valid_to": end.isoformat(),
+            "quality": row["quality"],
+            "forecast_is_measurement": False,
+            "display_rounding": "floor",
+        }
+
+
 class OptimiseEVHistorySensor(OptimiseEVModuleEntity, SensorEntity):
     def __init__(self, coordinator, site_label, vehicle, number, description):
         super().__init__(coordinator, site_label, vehicle, number, description.key, "history")
@@ -469,6 +532,7 @@ async def async_setup_ev_sensors(entry, async_add_entities):
                 OptimiseEVReadyBySensor(site.ev_plan, label, vehicle, number),
                 OptimiseEVReadyBySensor(site.ev_plan, label, vehicle, number, timestamp=True),
                 OptimiseEVForecastSensor(site.ev_plan, label, vehicle, number),
+                OptimiseEVAppSocSensor(site.ev_plan, label, vehicle, number),
                 *[
                     OptimiseEVHistorySensor(site.ev_history, label, vehicle, number, spec)
                     for spec in EV_HISTORY_SENSORS
