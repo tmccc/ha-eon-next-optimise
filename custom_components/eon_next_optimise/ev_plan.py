@@ -38,6 +38,8 @@ def parse_ev_timeline(payload: Any, *, now: datetime | None = None) -> dict[str,
     At most 100 earliest current/future intervals are retained. A separate metadata
     flag marks truncation, so consumers cannot mistake a short high-frequency plan
     for complete 48-hour coverage. Prices retain the provider's pence/kWh unit.
+    Finite SOC estimates outside 0–100% remain raw data for the app gauge; their
+    validated state of charge is unknown without discarding the remaining plan.
     """
     raw = _data(payload).get("evTimeline")
     timeline = _object(raw)
@@ -64,10 +66,12 @@ def parse_ev_timeline(payload: Any, *, now: datetime | None = None) -> dict[str,
             raise DataError("Invalid EV interval duration") from err
         if end <= start:
             raise DataError("Invalid EV interval duration")
+        raw_soc = _number(source.get("intervalStartSocPercent"))
         row = {
             "valid_from": start.isoformat(),
             "valid_to": end.isoformat(),
-            "state_of_charge": _number(source.get("intervalStartSocPercent"), percentage=True),
+            "state_of_charge": raw_soc if raw_soc is not None and 0 <= raw_soc <= 100 else None,
+            "raw_state_of_charge": raw_soc,
             "price": _number(source.get("generalPriceCents")),
             "source": _label(source.get("chargeEnergySourceEnum")),
             "quality": quality,

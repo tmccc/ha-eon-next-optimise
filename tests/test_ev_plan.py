@@ -152,6 +152,7 @@ def test_timeline_preserves_current_and_future_units_source_and_explicit_duratio
         "valid_from": "2026-10-30T11:50:00+00:00",
         "valid_to": "2026-10-30T12:20:00+00:00",
         "state_of_charge": 69,
+        "raw_state_of_charge": 69,
         "price": 26,
         "source": "Idle",
         "quality": "current",
@@ -181,11 +182,56 @@ def test_timeline_bounded_rows_mark_truncation_for_high_frequency_forecasts():
     assert result["truncated"] is True
 
 
+def test_distant_soc_above_capacity_does_not_discard_current_or_valid_forecasts():
+    future = [
+        interval(
+            NOW + timedelta(minutes=5 * index),
+            intervalLengthMinutes=5,
+            intervalStartSocPercent=70 if index < 100 else 100.08902189553524,
+        )
+        for index in range(1, 289)
+    ]
+    result = parse_ev_timeline(timeline(interval(intervalLengthMinutes=5), future), now=NOW)[
+        "timeline"
+    ]
+    assert result["reported"] is True and result["truncated"] is True
+    assert len(result["intervals"]) == MAX_TIMELINE_ROWS
+    assert result["intervals"][0]["state_of_charge"] == 69
+    assert result["intervals"][0]["quality"] == "current"
+    assert all(row["state_of_charge"] == 70 for row in result["intervals"][1:])
+
+
+@pytest.mark.parametrize("soc", [-0.2, -1, 100.08902189553524, 101])
+def test_out_of_range_soc_is_unknown_without_losing_raw_app_estimate_or_other_fields(soc):
+    result = parse_ev_timeline(timeline(interval(intervalStartSocPercent=soc)), now=NOW)["timeline"]
+    row = result["intervals"][0]
+    assert row["state_of_charge"] is None
+    assert row["raw_state_of_charge"] == soc
+    assert row["price"] == 26 and row["source"] == "Idle"
+    assert row["valid_to"] == (NOW + timedelta(minutes=30)).isoformat()
+
+
+@pytest.mark.parametrize("soc", [0, 100])
+def test_soc_percentage_bounds_remain_valid(soc):
+    row = parse_ev_timeline(timeline(interval(intervalStartSocPercent=soc)), now=NOW)["timeline"][
+        "intervals"
+    ][0]
+    assert row["state_of_charge"] == row["raw_state_of_charge"] == soc
+
+
 def test_timeline_current_duplicate_wins_only_when_values_agree():
     result = parse_ev_timeline(timeline(interval(), [interval()]), now=NOW)["timeline"]
     assert len(result["intervals"]) == 1 and result["intervals"][0]["quality"] == "current"
     with pytest.raises(DataError, match="Conflicting"):
         parse_ev_timeline(timeline(interval(), [interval(intervalStartSocPercent=68)]), now=NOW)
+    with pytest.raises(DataError, match="Conflicting"):
+        parse_ev_timeline(
+            timeline(
+                interval(intervalStartSocPercent=100.1),
+                [interval(intervalStartSocPercent=100.2)],
+            ),
+            now=NOW,
+        )
 
 
 def test_timeline_overlaps_are_rejected_and_dst_instants_remain_distinct():
@@ -215,8 +261,11 @@ def test_timeline_overlaps_are_rejected_and_dst_instants_remain_distinct():
         ("intervalLengthMinutes", True),
         ("intervalLengthMinutes", float("inf")),
         ("intervalLengthMinutes", 1e-100),
-        ("intervalStartSocPercent", 101),
-        ("intervalStartSocPercent", -1),
+        ("intervalStartSocPercent", True),
+        ("intervalStartSocPercent", "69"),
+        ("intervalStartSocPercent", float("nan")),
+        ("intervalStartSocPercent", float("inf")),
+        ("intervalStartSocPercent", -float("inf")),
         ("generalPriceCents", True),
         ("chargeEnergySourceEnum", "x" * 129),
         ("chargeEnergySourceEnum", "bad\nstate"),
@@ -237,6 +286,7 @@ def test_timeline_missing_measurements_remain_none_and_negative_prices_are_valid
     missing = {"intervalStartTimeIso": NOW.isoformat(), "intervalLengthMinutes": 5}
     row = parse_ev_timeline(timeline(missing), now=NOW)["timeline"]["intervals"][0]
     assert row["state_of_charge"] is None and row["price"] is None and row["source"] is None
+    assert row["raw_state_of_charge"] is None
     row = parse_ev_timeline(timeline(interval(generalPriceCents=-2)), now=NOW)["timeline"][
         "intervals"
     ][0]

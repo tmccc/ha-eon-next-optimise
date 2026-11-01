@@ -178,6 +178,13 @@ unavailable when the timeline is stale or has a gap. Its attributes include the
 unrounded percentage, interval bounds and display method. Fetch timestamps do
 not establish when the physical vehicle was last measured.
 
+Finite timeline projections outside 0–100% do not discard otherwise valid
+intervals. The affected forecast's bounded state of charge is unknown; its raw
+projection is retained separately so the app-display sensor can apply the
+official app's floor-and-clamp rule. The live vehicle state-of-charge measurement
+is unchanged. Invalid types, non-finite values and malformed intervals remain
+validation failures.
+
 Normal TLS certificate validation stays enabled. The fixed production endpoint
 does not accept arbitrary URLs, documents or redirects. GraphQL variables carry
 site IDs as data, without interpolating them into query source.

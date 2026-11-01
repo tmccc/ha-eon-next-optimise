@@ -422,6 +422,10 @@ class OptimiseEVAppSocSensor(OptimiseEVModuleEntity, SensorEntity):
             key="ev_app_soc", name="Battery level shown in app"
         )
 
+    @staticmethod
+    def _raw_soc(row):
+        return row.get("raw_state_of_charge", row.get("state_of_charge"))
+
     def _current(self):
         if not super().available:
             return None
@@ -431,7 +435,7 @@ class OptimiseEVAppSocSensor(OptimiseEVModuleEntity, SensorEntity):
             for start, end, row in _periods(self._module().get("intervals"))
             if row.get("quality") in {"current", "forecast"} and start <= now < end
         ]
-        if len(matches) != 1 or not finite_number(matches[0][2].get("state_of_charge")):
+        if len(matches) != 1 or not finite_number(self._raw_soc(matches[0][2])):
             return None
         return matches[0]
 
@@ -445,7 +449,7 @@ class OptimiseEVAppSocSensor(OptimiseEVModuleEntity, SensorEntity):
         if current is None:
             return None
         # Official app sanitiseSocPercent floors the interval's starting SOC.
-        return max(0, min(100, math.floor(current[2]["state_of_charge"])))
+        return max(0, min(100, math.floor(self._raw_soc(current[2]))))
 
     def _change_instants(self, now):
         return super()._change_instants(now) + [
@@ -463,7 +467,7 @@ class OptimiseEVAppSocSensor(OptimiseEVModuleEntity, SensorEntity):
         start, end, row = current
         return {
             "source": "ev_timeline",
-            "raw_state_of_charge": row["state_of_charge"],
+            "raw_state_of_charge": self._raw_soc(row),
             "valid_from": start.isoformat(),
             "valid_to": end.isoformat(),
             "quality": row["quality"],

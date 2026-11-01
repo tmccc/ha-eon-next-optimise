@@ -15,6 +15,7 @@ from custom_components.eon_next_optimise.auth import TokenSet
 from custom_components.eon_next_optimise.exceptions import (
     AuthenticationError,
     CannotConnect,
+    ProviderErrorInfo,
     RateLimited,
 )
 from custom_components.eon_next_optimise.models import MAX_DEVICES, parse_time
@@ -217,6 +218,27 @@ async def test_known_empty_fleet_needs_no_request_and_null_success_is_unknown_no
     assert row["timeline"]["reported"] is False and row["timeline"]["query_success"] is True
     assert row["ready_by"]["target_soc"] is None and row["ready_by"]["active"] is None
     assert row["ready_by"]["fetched_at"] is not None
+    assert result.last_error_info("ev_plan", "PRIVATE_SITE") is None
+
+
+async def test_finite_out_of_range_timeline_soc_succeeds_and_clears_previous_parser_failure():
+    answer = response("ev_timeline")
+    row = answer.payload["data"]["evTimeline"]["futureIntervals"][0]
+    row["intervalStartSocPercent"] = 100.08902189553524
+    result = client({("ev_timeline", "PRIVATE_CAR_A"): answer})
+    result._record_error("ev_timeline", "PRIVATE_SITE", ProviderErrorInfo("parser_invalid", 200))
+    result._record_error(
+        "ev_plan",
+        "PRIVATE_SITE",
+        ProviderErrorInfo("partial", failed_roots=("evTimeline",), failed_request_count=1),
+    )
+    output = await result.async_fetch_ev_fleet_section("ev_plan", "PRIVATE_SITE", FLEET[:1])
+    timeline = output["vehicles"][0]["timeline"]
+    assert timeline["reported"] is True and timeline["query_success"] is True
+    assert timeline["intervals"][0]["state_of_charge"] is None
+    assert timeline["intervals"][0]["raw_state_of_charge"] == 100.08902189553524
+    assert output["vehicles"][0]["ready_by"]["query_success"] is True
+    assert result.last_error_info("ev_timeline", "PRIVATE_SITE") is None
     assert result.last_error_info("ev_plan", "PRIVATE_SITE") is None
 
 

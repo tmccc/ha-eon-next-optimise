@@ -151,6 +151,21 @@ def test_optional_module_failure_isolated_and_never_reuses_other_current_data(so
         assert target(sources).available
 
 
+def test_next_forecast_with_out_of_range_raw_soc_stays_unknown_without_skipping_point(sources):
+    first = sources.modules["timeline"]["intervals"][0]
+    first.update(state_of_charge=None, raw_state_of_charge=100.08902189553524)
+    entity = forecast(sources)
+    assert not entity.available
+    assert entity.native_value is None
+    attrs = entity.extra_state_attributes
+    assert attrs["forecast_period_count"] == 2
+    assert attrs["forecast"][0]["state_of_charge"] is None
+    assert attrs["forecast"][0]["price_p_per_kwh"] == 23.5
+    assert attrs["forecast"][1]["state_of_charge"] == 65
+    assert "raw_state_of_charge" not in str(attrs)
+    assert target(sources).available
+
+
 @pytest.mark.parametrize("failure", ["stale", "failed", "unknown", "removed"])
 def test_optional_entities_require_current_live_fleet_membership(sources, failure):
     entity = history(sources)

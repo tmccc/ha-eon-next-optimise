@@ -103,6 +103,30 @@ def test_app_gauge_matches_floor_then_clamp_including_zero(sources, value, expec
 
 
 @pytest.mark.parametrize(
+    "value,expected", [(0, 0), (100, 100), (69.9999, 69), (-0.2, 0), (100.08902189553524, 100)]
+)
+def test_app_gauge_uses_explicit_raw_estimate_and_preserves_bounded_soc(sources, value, expected):
+    row = sources.timeline["intervals"][0]
+    row["raw_state_of_charge"] = value
+    row["state_of_charge"] = value if 0 <= value <= 100 else None
+    assert sources.entity.available
+    assert sources.entity.native_value == expected
+    assert sources.entity.extra_state_attributes["raw_state_of_charge"] == value
+    assert row["state_of_charge"] == (value if 0 <= value <= 100 else None)
+    assert sources.fleet.data["vehicles"][0]["state_of_charge"] == 70
+
+
+@pytest.mark.parametrize(
+    "value", [None, True, "69.7304", float("nan"), float("inf"), -float("inf")]
+)
+def test_explicit_invalid_raw_estimate_does_not_fall_back_to_bounded_soc(sources, value):
+    sources.timeline["intervals"][0]["raw_state_of_charge"] = value
+    assert not sources.entity.available
+    assert sources.entity.native_value is None
+    assert sources.entity.extra_state_attributes is None
+
+
+@pytest.mark.parametrize(
     "value", [None, True, "69.7304", float("nan"), float("inf"), -float("inf")]
 )
 def test_missing_and_nonfinite_soc_never_becomes_zero_or_exposes_stale_attributes(sources, value):

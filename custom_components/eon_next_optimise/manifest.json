@@ -12,5 +12,5 @@
   "requirements": [
     "pycognito==2024.5.1"
   ],
-  "version": "0.2.0a6"
+  "version": "0.2.0a7"
 }
