@@ -1,4 +1,4 @@
-# EV timeline forecast correction — 0.2.0a7 candidate
+# EV timeline forecast correction — 0.2.0a7
 
 A finite future battery projection slightly above 100% could make the entire
 EV timeline unavailable. The provider can return a valid current interval and
@@ -19,6 +19,6 @@ negative SOC, gauge clipping, unavailable individual forecast points and API
 error-cache recovery.
 
 Price parsing, authentication, query documents, polling, entity identities and
-Powerwall controls are outside this change. This candidate requires a normal
+Powerwall controls are outside this change. This release requires a normal
 Home Assistant restart to load after installation; reloading an entry does not
 re-import its Python modules.
