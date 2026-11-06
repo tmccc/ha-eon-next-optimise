@@ -1,10 +1,12 @@
 """Optional EV modules preserve unknowns, explicit dates and provider forecasts."""
 
+import json
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from homeassistant.components.recorder.db_schema import MAX_STATE_ATTRS_BYTES, StateAttributes
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.util import dt as dt_util
 
@@ -230,6 +232,29 @@ def test_forecast_bounded_allowlisted_unknown_count_and_no_measurement_statistic
     assert entity.extra_state_attributes["forecast_period_count"] == 0  # Known empty is real.
     sources.modules["timeline"]["reported"] = False
     assert entity.extra_state_attributes["forecast_period_count"] is None
+
+
+def test_forecast_retains_live_timeline_and_records_bounded_summary(sources):
+    sources.modules["timeline"]["intervals"] = [
+        period(NOW + timedelta(minutes=5 * index), 23.144 + index / 2, source="ChargeFromGrid")
+        for index in range(100)
+    ]
+    entity = forecast(sources)
+    attributes = entity.extra_state_attributes
+    assert len(attributes["forecast"]) == 100
+    assert len(json.dumps(attributes, separators=(",", ":")).encode()) > MAX_STATE_ATTRS_BYTES
+    new_state = SimpleNamespace(
+        entity_id="sensor.optimise_ev_1_next_forecast_state_of_charge",
+        attributes=attributes,
+        state_info={"unrecorded_attributes": entity._unrecorded_attributes},
+    )
+    event = SimpleNamespace(data={"new_state": new_state})
+    recorded = json.loads(StateAttributes.shared_attrs_bytes_from_event(event, None))
+    assert "forecast" not in recorded
+    assert entity.native_value == attributes["forecast"][1]["state_of_charge"]
+    assert recorded["next_forecast_at"] == (NOW + timedelta(minutes=5)).isoformat()
+    assert recorded["forecast_period_count"] == 100
+    assert recorded["forecast_is_measurement"] is False
 
 
 async def test_forecast_boundary_updates_locally_without_provider_query(hass, sources, monkeypatch):
