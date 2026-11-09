@@ -343,6 +343,9 @@ class OptimiseEVReadyBySensor(OptimiseEVModuleEntity, SensorEntity):
 class OptimiseEVForecastSensor(OptimiseEVModuleEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.BATTERY
     _attr_native_unit_of_measurement = PERCENTAGE
+    # Keep the full live timeline available to dashboards. Recorder can store
+    # the scalar forecast and its summary without the oversized row array.
+    _unrecorded_attributes = frozenset({"forecast"})
 
     def __init__(self, coordinator, site_label, vehicle, number):
         super().__init__(coordinator, site_label, vehicle, number, "plan_forecast_soc", "timeline")
@@ -360,20 +363,20 @@ class OptimiseEVForecastSensor(OptimiseEVModuleEntity, SensorEntity):
             if end > now and start < now + FORECAST_HORIZON and end <= now + FORECAST_HORIZON
         ][:MAX_ATTRIBUTE_PERIODS]
 
-    def _next(self):
-        return next(
-            (row for start, _end, row in self._rows() or [] if start > dt_util.utcnow()), None
-        )
+    @staticmethod
+    def _next(rows):
+        now = dt_util.utcnow()
+        return next((period for period in rows or [] if period[0] > now), None)
 
     @property
     def available(self):
-        row = self._next()
-        value = row.get("state_of_charge") if row else None
-        return super().available and finite_number(value) and 0 <= value <= 100
+        return self.native_value is not None
 
     @property
     def native_value(self):
-        return self._next()["state_of_charge"] if self.available else None
+        period = self._next(self._rows())
+        value = period[2].get("state_of_charge") if period else None
+        return value if finite_number(value) and 0 <= value <= 100 else None
 
     def _change_instants(self, now):
         return super()._change_instants(now) + [
@@ -401,8 +404,10 @@ class OptimiseEVForecastSensor(OptimiseEVModuleEntity, SensorEntity):
                     else None,
                 }
             )
+        next_period = self._next(rows)
         return {
             "forecast": forecast,
+            "next_forecast_at": next_period[0].isoformat() if next_period else None,
             "forecast_period_count": len(forecast) if rows is not None else None,
             "forecast_truncated": self._module().get("truncated") if rows is not None else None,
             "forecast_is_measurement": False,
